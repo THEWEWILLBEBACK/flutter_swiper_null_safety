@@ -78,8 +78,8 @@ class _ExampleCustomState extends State<ExampleCustom> {
     _currentIndex = 0;
     _curve = Curves.ease;
     _scale = 0.8;
-    _controller = new SwiperController();
-    _layout = SwiperLayout.TINDER;
+    _controller = SwiperController();
+    _layout = SwiperLayout.TINDER2;
     _radius = 10.0;
     _padding = 0.0;
     _loop = true;

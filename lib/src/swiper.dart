@@ -10,6 +10,8 @@ import 'flutter_page_indicator/flutter_page_indicator.dart';
 
 part 'custom_layout.dart';
 
+typedef Widget CusSwiperBuilder(context);
+
 typedef void SwiperOnTap(int index);
 
 typedef Widget SwiperDataBuilder(BuildContext context, dynamic data, int index);
@@ -23,7 +25,7 @@ const int kDefaultAutoplayTransactionDuration = 300;
 const int kMaxValue = 2000000000;
 const int kMiddleValue = 1000000000;
 
-enum SwiperLayout { DEFAULT, STACK, TINDER, CUSTOM }
+enum SwiperLayout { DEFAULT, STACK, TINDER, CUSTOM, TINDER2, CUS_SWIPER }
 
 class Swiper extends StatefulWidget {
   /// If set true , the pagination will display 'outer' of the 'content' container.
@@ -113,10 +115,13 @@ class Swiper extends StatefulWidget {
 
   final PageIndicatorLayout indicatorLayout;
 
+
+  final CusSwiperBuilder? cusSwiperBuilder;
+
   Swiper({
     required this.itemBuilder,
     this.indicatorLayout: PageIndicatorLayout.NONE,
-
+    this.cusSwiperBuilder,
     ///
     this.transformer,
     required this.itemCount,
@@ -553,7 +558,21 @@ class _SwiperState extends _SwiperTimerMixin {
         controller: _controller!,
         scrollDirection: widget.scrollDirection,
       );
-    } else {
+    }else if(widget.layout == SwiperLayout.TINDER2){
+      return StackFoldSwiper(loop: widget.loop,
+        itemWidth: widget.itemWidth,
+        itemHeight: widget.itemHeight,
+        itemCount: widget.itemCount,
+        itemBuilder: itemBuilder,
+        index: _activeIndex,
+        curve: widget.curve,
+        duration: widget.duration,
+        onIndexChanged: _onIndexChanged,
+        controller: _controller!,
+        scrollDirection: widget.scrollDirection,);
+    } else if(widget.layout == SwiperLayout.CUS_SWIPER){
+      return widget.cusSwiperBuilder!.call(context);
+    }else {
       return new Container();
     }
   }
@@ -648,7 +667,7 @@ class _SwiperState extends _SwiperTimerMixin {
   }
 }
 
-abstract class _SubSwiper extends StatefulWidget {
+abstract class SubSwiper extends StatefulWidget {
   final IndexedWidgetBuilder itemBuilder;
   final int itemCount;
   final int? index;
@@ -661,7 +680,7 @@ abstract class _SubSwiper extends StatefulWidget {
   final bool loop;
   final Axis? scrollDirection;
 
-  _SubSwiper(
+  SubSwiper(
       {Key? key,
       this.loop = false,
       this.itemHeight = double.infinity,
@@ -689,7 +708,7 @@ abstract class _SubSwiper extends StatefulWidget {
   }
 }
 
-class _TinderSwiper extends _SubSwiper {
+class _TinderSwiper extends SubSwiper {
   _TinderSwiper({
     Key? key,
     Curve curve = Curves.linear,
@@ -723,7 +742,7 @@ class _TinderSwiper extends _SubSwiper {
   }
 }
 
-class _StackSwiper extends _SubSwiper {
+class _StackSwiper extends SubSwiper {
   _StackSwiper({
     Key? key,
     Curve curve = Curves.linear,
@@ -956,5 +975,131 @@ class ScaleAndFadeTransformer extends PageTransformer {
     }
 
     return child;
+  }
+}
+
+class StackFoldSwiper extends SubSwiper {
+  StackFoldSwiper({
+    Key? key,
+    Curve curve = Curves.linear,
+    int duration = 0,
+    required SwiperController controller,
+    ValueChanged<int>? onIndexChanged,
+    double itemHeight = 0,
+    double itemWidth = 0,
+    required IndexedWidgetBuilder itemBuilder,
+    int index = 0,
+    bool loop = false,
+    int itemCount = 0,
+    Axis? scrollDirection,
+  }) : super(
+      loop: loop,
+      key: key,
+      itemWidth: itemWidth,
+      itemHeight: itemHeight,
+      itemBuilder: itemBuilder,
+      curve: curve,
+      duration: duration,
+      controller: controller,
+      index: index,
+      onIndexChanged: onIndexChanged,
+      itemCount: itemCount,
+      scrollDirection: scrollDirection);
+
+  @override
+  State<StatefulWidget> createState() {
+    return  _StackFolderState();
+  }
+}
+
+class _StackFolderState extends _CustomLayoutStateBase<StackFoldSwiper> {
+  late List<double> scales;
+  late List<double> offsetsX;
+  late List<double> offsetsY;
+  late List<double> opacity;
+  late List<double> rotates;
+
+
+  @override
+  bool get reversed => true;
+
+  double getOffsetY(double scale) {
+    return widget.itemHeight - widget.itemHeight * scale;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+
+  @override
+  void didUpdateWidget(StackFoldSwiper oldWidget) {
+    _updateValues();
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void afterRender() {
+    super.afterRender();
+
+    _startIndex = -2;
+    _animationCount = 5;
+    opacity = [0.0, 0.9, 0.9, 1.0, 0.0, 0.0];
+    scales = [ 1.0,  1.0,  1.0, 0.95, 0.90, 0.85, 0.8];//0.75,
+    rotates = [0.0, 0.0, 0.0, 0.0, 20.0, 25.0];
+    _updateValues();
+  }
+
+  void _updateValues() {
+    if (widget.scrollDirection == Axis.horizontal) {
+      offsetsX = [ -_swiperWidth, -_swiperWidth, 0.0,  5.0,  10, 15, 20];
+      offsetsY = [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+      ];
+    } else {
+      offsetsX = [
+        0.0,
+        0.0,
+        5.0,
+        10.0,
+        15.0,
+        20.0,
+      ];
+      offsetsY = [0.0, 0.0, 0.0, 0.0, _swiperHeight, _swiperHeight];
+    }
+  }
+
+  @override
+  Widget _buildItem(int i, int realIndex, double animationValue) {
+    double s = _getValue(scales, animationValue, i);
+    double f = _getValue(offsetsX, animationValue, i);
+    double fy = _getValue(offsetsY, animationValue, i);
+
+    Alignment alignment = widget.scrollDirection == Axis.horizontal
+        ? Alignment.centerRight
+        : Alignment.centerLeft;
+
+    if (realIndex == 0) {
+      print("_buildItem" +  "f $f   index: $i  realIndex: $realIndex  animationValue: $animationValue");
+    }
+
+    return Transform.translate(
+      key: ValueKey<int>(_currentIndex + i),
+      offset: Offset(f, fy),
+      child: Transform.scale(
+        scale: s,
+        alignment: alignment,
+        child:  SizedBox(
+          width: widget.itemWidth,
+          height: widget.itemHeight,
+          child: widget.itemBuilder(context, realIndex),
+        ),
+      ),
+    );
   }
 }

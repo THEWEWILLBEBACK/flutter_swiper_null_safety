@@ -1,6 +1,6 @@
 part of 'swiper.dart';
 
-abstract class _CustomLayoutStateBase<T extends _SubSwiper> extends State<T>
+abstract class _CustomLayoutStateBase<T extends SubSwiper> extends State<T>
     with SingleTickerProviderStateMixin {
   double _swiperWidth = double.infinity;
   double _swiperHeight = double.infinity;
@@ -8,6 +8,9 @@ abstract class _CustomLayoutStateBase<T extends _SubSwiper> extends State<T>
   late AnimationController _animationController;
   int? _startIndex;
   int? _animationCount;
+
+  ///滚动的顺序
+  bool get reversed => false;
 
   @override
   void initState() {
@@ -83,7 +86,7 @@ abstract class _CustomLayoutStateBase<T extends _SubSwiper> extends State<T>
 
   Widget _buildContainer(List<Widget> list) {
     return new Stack(
-      children: list,
+      children: reversed ? list.reversed.toList() : list,
     );
   }
 
@@ -104,16 +107,16 @@ abstract class _CustomLayoutStateBase<T extends _SubSwiper> extends State<T>
       }
     }
 
-    return new GestureDetector(
+    return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onPanStart: _onPanStart,
       onPanEnd: _onPanEnd,
       onPanUpdate: _onPanUpdate,
-      child: new ClipRect(
-        child: new Center(
-          child: _buildContainer(list),
-        ),
+      // child: new ClipRect(
+      child: Center(
+        child: _buildContainer(list),
       ),
+      // ),
     );
   }
 
@@ -226,12 +229,11 @@ abstract class _CustomLayoutStateBase<T extends _SubSwiper> extends State<T>
 
   void _onPanUpdate(DragUpdateDetails details) {
     if (_lockScroll) return;
-    double value = _currentValue ??
-        0 +
-            ((widget.scrollDirection == Axis.horizontal
-                    ? details.globalPosition.dx
-                    : details.globalPosition.dy) -
-                (_currentPos ?? 0) / (_swiperWidth) / 2);
+    double value = (_currentValue ?? 0) +
+        (((widget.scrollDirection == Axis.horizontal
+            ? details.globalPosition.dx
+            : details.globalPosition.dy) -
+            (_currentPos ?? 0)) / _swiperWidth / 2);
     // no loop ?
     if (!widget.loop) {
       if (_currentIndex >= widget.itemCount - 1) {
@@ -373,36 +375,35 @@ class CustomLayoutOption {
   }
 }
 
-class _CustomLayoutSwiper extends _SubSwiper {
+class _CustomLayoutSwiper extends SubSwiper {
   final CustomLayoutOption? option;
 
-  _CustomLayoutSwiper(
-      {this.option,
-      double itemWidth = double.infinity,
-      bool loop = false,
-      double itemHeight = double.infinity,
-      ValueChanged<int>? onIndexChanged,
-      Key? key,
-      required IndexedWidgetBuilder itemBuilder,
-      Curve curve = Curves.linear,
-      int duration = 0,
-      int? index,
-      int itemCount = 0,
-      Axis? scrollDirection,
-      required SwiperController controller})
+  _CustomLayoutSwiper({this.option,
+    double itemWidth = double.infinity,
+    bool loop = false,
+    double itemHeight = double.infinity,
+    ValueChanged<int>? onIndexChanged,
+    Key? key,
+    required IndexedWidgetBuilder itemBuilder,
+    Curve curve = Curves.linear,
+    int duration = 0,
+    int? index,
+    int itemCount = 0,
+    Axis? scrollDirection,
+    required SwiperController controller})
       : super(
-            loop: loop,
-            onIndexChanged: onIndexChanged,
-            itemWidth: itemWidth,
-            itemHeight: itemHeight,
-            key: key,
-            itemBuilder: itemBuilder,
-            curve: curve,
-            duration: duration,
-            index: index,
-            itemCount: itemCount,
-            controller: controller,
-            scrollDirection: scrollDirection);
+      loop: loop,
+      onIndexChanged: onIndexChanged,
+      itemWidth: itemWidth,
+      itemHeight: itemHeight,
+      key: key,
+      itemBuilder: itemBuilder,
+      curve: curve,
+      duration: duration,
+      index: index,
+      itemCount: itemCount,
+      controller: controller,
+      scrollDirection: scrollDirection);
 
   @override
   State<StatefulWidget> createState() {
