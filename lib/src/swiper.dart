@@ -1016,8 +1016,6 @@ class _StackFolderState extends _CustomLayoutStateBase<StackFoldSwiper> {
   late List<double> scales;
   late List<double> offsetsX;
   late List<double> offsetsY;
-  late List<double> opacity;
-  late List<double> rotates;
 
 
   @override
@@ -1043,16 +1041,14 @@ class _StackFolderState extends _CustomLayoutStateBase<StackFoldSwiper> {
     super.afterRender();
 
     _startIndex = -2;
-    _animationCount = 5;
-    opacity = [0.0, 0.9, 0.9, 1.0, 0.0, 0.0];
-    scales = [ 1.0,  1.0,  1.0, 0.95, 0.90, 0.85, 0.8];//0.75,
-    rotates = [0.0, 0.0, 0.0, 0.0, 20.0, 25.0];
+    _animationCount = 4;
+    scales = [1.0,  1.0, 0.95, 0.90, 0.85, 0.8];//0.75,
     _updateValues();
   }
 
   void _updateValues() {
     if (widget.scrollDirection == Axis.horizontal) {
-      offsetsX = [ -_swiperWidth, -_swiperWidth, 0.0,  5.0,  10, 15, 20];
+      offsetsX = [-_swiperWidth, 0.0,  5.0,  10, 15, 20];
       offsetsY = [
         0.0,
         0.0,
@@ -1083,10 +1079,6 @@ class _StackFolderState extends _CustomLayoutStateBase<StackFoldSwiper> {
     Alignment alignment = widget.scrollDirection == Axis.horizontal
         ? Alignment.centerRight
         : Alignment.centerLeft;
-
-    if (realIndex == 0) {
-      print("_buildItem" +  "f $f   index: $i  realIndex: $realIndex  animationValue: $animationValue");
-    }
 
     return Transform.translate(
       key: ValueKey<int>(_currentIndex + i),
